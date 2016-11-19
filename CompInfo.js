@@ -16,6 +16,7 @@ Version = "0.1 03-11-2016";
 Version = "0.2 04-11-2016";
 Version = "0.3 07-11-2016";
 Version = "0.4 08-11-2016";
+Version = "0.5 12-11-2016";
 
 var RAMOnly    = false;
 var Globals    = {};
@@ -31,7 +32,7 @@ if ( WScript.Arguments.Named.Length > 0
    {
       "PLATFORM": "ComputerSystem", "CPU": "Processor", "RAM": "PhysicalMemory",
       "VIDEO": "VideoController", "DISKS": "DiskDrive", "SOUND": "SoundDevice",
-      "BATTERY": "PortableBattery"
+      "BATTERY": "Battery"
    };
    for ( var i = 0; i < work.length; i++ )
    {
@@ -84,6 +85,52 @@ function Explain( component, p, v )
 // P.A: value for MemoryType[ 23 ] - is not defined !!!
    var Translation = 
    {
+      "CacheMemory":
+      {
+         "Access": 
+         [ 
+            "Unknown","Readable","Writeable","Read/Write Supported","Write Once" 
+         ],
+         "Associativity": 
+         [ 
+            "Other","Unknown","Direct Mapped","2-way Set-Associative","4-way Set-Associative", 
+            "Fully Associative","8-way Set-Associative","16-way Set-Associative"
+         ],
+         "Availability": 
+         [
+            "Other","Unknown","Running/Full Power","Warning","In Test","Not Applicable",
+            "Power Off","Off Line","Off Duty","Degraded","Not Installed","Install Error",
+            "The device is known to be in a power save mode, but its exact status is unknown",
+            "Power Save - Low Power Mode","Power Save - Standby","Power Cycle",
+            "The device is in a warning state, though also in a power save mode.",
+            "The device is paused.","Not Ready","The device is not ready.",
+            "The device is not configured.","The device is quiet."
+         ],
+         "CacheType": 
+         [ 
+            "Other","Unknown","Instruction","Data","Unified" 
+         ],
+         "CurrentSRAM": 
+         [ 
+            "Other","Unknown","Non-Burst","Burst","Pipeline Burst","Synchronous","Asynchronous" 
+         ],
+         "ErrorCorrectType": 
+         [ 
+            "Reserved","Other","Unknown","None","Parity","Single-bit ECC","Multi-bit ECC"        
+         ],
+         "Level":
+         [ 
+            "Other","Unknown","Primary","Secondary","Tertiary","Not Applicable"        
+         ],
+         "Location":
+         [ 
+            "Internal","External","Reserved","Unknown"        
+         ],
+         "StatusInfo":
+         [ 
+            "Other","Unknown","Enabled","Disabled","Not Applicable"     
+         ]
+      },// end-of-"CacheMemory"
       "PhysicalMemory": 
       {   
          "FormFactor": // 0..23
@@ -125,18 +172,33 @@ function Explain( component, p, v )
             "1394 boot is supported","Smart Battery supported" 
          ]
       },
-      "PortableBattery":
+      "Battery":
       {
+         "Availability":
+         [
+            "Other","Unknow","Running or Full Power","Warning","In Test","Not Applicable",
+            "Power Off","Off Line","Off Duty","Degraded","Not Installed","Install Error","Power Save - Unknown",
+            "The device is known to be in a power save mode, but its exact status is unknown.",
+            "Power Save - Low Power Mode",
+            "The device is in a power save state but still functioning, and may exhibit degraded performance.",
+            "Power Save - Standby","The device is not functioning, but could be brought to full power quickly.",
+            "Power Cycle","Power Save - Warning","The device is in a warning state, though also in a power save mode",
+            "Paused","The device is paused.","Not Ready","Not Configured","The device is quiet."
+         ],
          "Chemistry":
          [ 
             "Notapplicable","Other","Unknown","Lead Acid","Nickel Cadmium","Nickel Metal Hydride",
             "Lithium-ion","Zinc air","Lithium Polymer"
          ],
          "BatteryStatus":
-         [
+         [                             
             "The battery is discharging.","The system has access to AC so no battery is being discharged.",
             "Fully Charged","Low","Critical","Charging","Charging and High","Charging and Low",
             "Charging and Critical","Undefined","Partially Charged"
+         ],
+         "PowerManagementCapabilities":
+         [
+            "Unknown","Not Supported","Disabled","Enabled"
          ]
       }         
    };
@@ -162,21 +224,132 @@ function Explain( component, p, v )
       v /= 1024;
       return v.toString() + " PB";
    } 
-   switch ( component )
-   {  
+   switch ( component )//
+   { 
+      case "Win32_CacheMemory":
+      {
+         switch ( p )
+         {
+            case "Access":
+            {
+               return (v >= 0 && v < 4) ? v + IntoBra( Translation.CacheMemory.Access[ v ] ) :
+                                           v + " (Unknown)";
+            }
+            case "Associativity": 
+            {
+               return (v >= 1 && v < 8 ) ? v + IntoBra( Translation.CacheMemory.Associativity[ v ] ) :
+                                            v + " (Unknown)";
+            }
+            case "Availability": 
+            {
+               return (v >= 1 && v < 21 ) ? v + IntoBra( Translation.CacheMemory.Availability[ v ] ) :
+                                             v + " (Unknown)";
+            }
+            case "BlockSize": 
+            {
+               return BytesToString( v );
+            }
+            case "CacheSpeed": 
+            {
+               return v + " nanoseconds";
+            }
+            case "CacheType": 
+            {
+               return (v >= 1 && v < 5 ) ? v + IntoBra( Translation.CacheMemory.CacheType[ v ] ) :
+                                            v + " (Unknown)";
+            }
+            case "CurrentSRAM": 
+            {
+               return (v >= 0 && v < 6 ) ? v + IntoBra( Translation.CacheMemory.CurrentSRAM[ v ] ) :
+                                            v + " (Unknown)";
+            }
+            case "ErrorCorrectType":  
+            {
+               return (v >= 0 && v < 6 ) ? v + IntoBra( Translation.CacheMemory.ErrorCorrectType[ v ] ) :
+                                            v + " (Unknown)";
+            }
+            case "InstalledSize": 
+            {
+               return BytesToString( v );
+            }
+            case "MaxCacheSize": 
+            {
+               return v + " KB";
+            }
+            case "Level":  
+            {
+               return (v >= 1 && v < 6 ) ? v + IntoBra( Translation.CacheMemory.Level[ v ] ) :
+                                            v + " (Unknown)";
+            }
+            case "Location":  
+            {
+               return (v >= 3 && v < 3 ) ? v + IntoBra( Translation.CacheMemory.Location[ v ] ) :
+                                            v + " (Unknown)";
+            }
+            case "StatusInfo":
+            {
+               return (v >= 1 && v < 5 ) ? v + IntoBra( Translation.CacheMemory.StatusInfo[ v ] ) :
+                                            v + " (Unknown)";
+            }
+         }
+      } 
+      case "Win32_Battery":      
       case "Win32_PortableBattery":
       {
          switch ( p )
          {
+            case "Availability":
+            {
+               return (v >= 1 && v < 21) ? v + IntoBra( Translation.Battery.Availability[ v ] ) :
+                                            v + " (Unknown)";
+            }
             case "BatteryStatus": 
             {
-               return (v >= 1 && v < 11) ? v + IntoBra( Translation.PortableBattery.BatteryStatus[ v ] ) :
+               return (v >= 1 && v < 11) ? v + IntoBra( Translation.Battery.BatteryStatus[ v ] ) :
                                             v + " (Unknown)";
             }
             case "Chemistry": 
             {
-               return (v >= 1 && v < 9 ) ? v + IntoBra( Translation.PortableBattery.Chemistry[ v ] ) :
+               return (v >= 1 && v < 9 ) ? v + IntoBra( Translation.Battery.Chemistry[ v ] ) :
                                             v + " (Unknown)";
+            }
+            case "PowerManagementCapabilities": 
+            {
+               return (v >= 0 && v < 3 ) ? v + IntoBra( Translation.Battery.PowerManagementCapabilities[ v ] ) :
+                                            v + " (Unknown)";
+            }
+            case "DesignCapacity":
+            {
+               return v + " milliwatt-hours";
+            }
+            case "DesignVoltage":
+            {
+               return v + " millivolts";
+            }
+            case "EstimatedChargeRemaining":
+            {
+               return v + " %";
+            }
+            case "DesignCapacity":
+            case "FullChargeCapacity":
+            {
+               return v + " milliwatt-hours";
+            }
+            case "DesignVoltage":
+            {
+               return v + " millivolts";
+            }
+            case "EstimatedChargeRemaining":
+            {
+               return v + " %";
+            }
+            case "ExpectedBatteryLife":
+            case "BatteryRechargeTime": 
+            case "EstimatedRunTime":
+            case "MaxRechargeTime":
+            case "ExpectedLife":
+            {
+               return v + " minutes";
             }
          }
       }
@@ -238,7 +411,6 @@ function Explain( component, p, v )
                   case 4096: { return v + " (Non-volatile)" ; }
                }
             }// end-of-case "TypeDetail":
-
          }// end-of-case switch ( p )
       }// end-of-case Win32_PhysicalMemory":
       case "Win32_VideoController":
@@ -355,7 +527,7 @@ function ComputerInfo()
    {
       "Win32_ComputerSystem":        "Manufacturer,Model,SystemFamily,SystemType,TotalPhysicalMemory,UserName",
       
-      "Win32_ComputerSystemProduct": "Description,IdentifyingNumber,Name,SKUNumber,Vendor,NumberOfCores,",
+      "Win32_ComputerSystemProduct": "Description,IdentifyingNumber,Name,SKUNumber,Vendor,NumberOfCores",
       
       "Win32_BaseBoard":             "Description,CreationClassName,HostingBoard,dt-InstallDate,Manufacturer," +
                                      "Model,Name,OtherIdentifyingInfo,PartNumber,Product,SKU,Version",
@@ -376,12 +548,17 @@ function ComputerInfo()
                                      "SecondLevelAddressTranslationExtensions,VirtualizationFirmwareEnabled," +
                                      "VMMonitorModeExtensions,SerialNumber,Version",
                                      
+      "Win32_CacheMemory":           "Description,Purpose,Access,Associativity,Availability,BlockSize,"       +
+                                     "CacheSpeed,CacheType,ta-CurrentSRAM,DeviceID,ErrorCorrectType,"         +      
+                                     "InstalledSize,Level,Location,MaxCacheSize,StatusInfo", 
+      
+                                     
       "Win32_PhysicalMemory":        "Description,BankLabel,PositionInRow,Capacity,ConfiguredClockSpeed,"     +
                                      "ConfiguredVoltage,DataWidth,FormFactor,"                                +
                                      "InterleaveDataDepth,InterleavePosition,Manufacturer,PartNumber,"        +
                                      "SerialNumber,SKU,MaxVoltage,MinVoltage,MemoryType,Speed,TypeDetail", 
                                      
-      "Win32_VideoController":       "Description,AdapterCompatibility,AdapterDACType,AdapterRAM," +
+      "Win32_VideoController":       "Description,AdapterCompatibility,AdapterDACType,AdapterRAM,"            +
                                      "dt-DriverDate,DriverVersion,VideoModeDescription", 
                                      
       "Win32_DesktopMonitor":        "Description,MonitorManufacturer",
@@ -390,12 +567,15 @@ function ComputerInfo()
       
       "Win32_DiskDrive":             "Caption,FirmwareRevision,InterfaceType,DeviceID,SerialNumber,Size,MediaType",
       
-      "Win32_PortableBattery":       "Description,Availability,BatteryStatus,CapacityMultiplier,Chemistry," +
-                                     "DesignCapacity,FullChargeCapacity,EstimatedChargeRemaining,"          +
-                                     "ExpectedBatteryLife,ExpectedLife,InstallDate,ManufactureDate,"        +
-                                     "Manufacturer,Location,Status,TimeOnBattery,TimeToFullCharge",
-      
-      "Win32_WinSAT":                "CPUScore,D3DScore,DiskScore,GraphicsScore,MemoryScore,TimeTaken," +
+      "Win32_Battery":               "Status,Availability,BatteryStatus,Chemistry,DeviceID,Name,"           +
+                                     "EstimatedRunTime,dt-InstallDate,ta-PowerManagementCapabilities,"      + 
+                                     "PowerManagementSupported",  
+
+      "Win32_PortableBattery":       "Description,DesignCapacity,DesignVoltage,Location,Manufacturer,"      +
+                                     "MaxBatteryError,SmartBatteryVersion",
+                                           
+                                                                  
+      "Win32_WinSAT":                "CPUScore,D3DScore,DiskScore,GraphicsScore,MemoryScore,TimeTaken,"     +
                                      "WinSATAssessmentState,WinSPRLevel"         
    };
    
@@ -416,6 +596,14 @@ function ComputerInfo()
       {
          return "null date";
       }
+      if ( typeof( dtmDate ) == "datetime" )
+      {
+         return dtmDate.toString();
+      }   
+      if ( typeof( dtmDate ) == "number" )
+      {
+         return dtmDate;
+      }        
       var strDateTime;
       if ( dtmDate.substr( 4, 1 ) == 0 )
       {
@@ -492,6 +680,38 @@ function ComputerInfo()
       }// End-of-for (; ! EnumObj.atEnd(); EnumObj.moveNext() )
       comp[ CN ] = ret;
    }// End-of-for ( var CN in Classes )
+
+   //
+   // Merge Win32_Battery and Win32_PortableBattery  
+   // 
+   var tmp = [];
+   var props = [
+   "Description","Manufacturer","DeviceID","Name","Chemistry","Status","Availability","BatteryStatus",
+   "MaxBatteryError","DesignCapacity","DesignVoltage","Location","PowerManagementSupported",
+   "PowerManagementCapabilities","InstallDate","SmartBatteryVersion"
+   ];
+
+   for ( var i = 0; i < comp.Win32_PortableBattery.length; i++ )
+   {
+      for ( var p in comp.Win32_PortableBattery[ i ] )
+      {
+         comp.Win32_Battery[ i ][ p ] = comp.Win32_PortableBattery[ i ][ p ];
+      }
+      var o = {}, p;
+      for ( var j = 0; j < props.length; j++ )
+      {
+         p = props[ j ];
+         if ( typeof( comp.Win32_Battery[ i ][ p ] ) != "undefined" )
+         {
+            o[ p ] = comp.Win32_Battery[ i ][ p ];
+         }
+      }
+      tmp[ tmp.length ] = o;      
+   }
+   delete comp.Win32_PortableBattery;   
+   delete comp.Win32_Battery;
+   comp[ "Win32_Battery" ] = tmp;
+   
    //
    // Set ComputerSystem.TotalPhysicalMemory to the sum of RAM-chips capacity 
    //   
@@ -511,8 +731,6 @@ function ComputerInfo()
 }// End-of-ComputerInfo
 
 ////////////////////////////////////////////////////////////////////////////////////
-var fso  = new ActiveXObject( "Scripting.FileSystemObject" );
-var path = fso.GetAbsolutePathName( "." );
 var Log  = ShowProps( ComputerInfo() );
 WScript.Echo( Log.join( "\n" ) );
 WScript.Quit();

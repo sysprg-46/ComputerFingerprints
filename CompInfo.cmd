@@ -37,11 +37,11 @@ echo Running %windir%\System32\CScript.exe %JSName%.js %1 %2 //NOLOGO
 
 if exist %log% Echo log file %log% was created
 
-REM Show log created in the Notepad
-cmd.exe /c notepad.exe %log% 
-
 REM Change dir to scripts home dir if necessary
 if NOT %Path%==%StartPath% cd /d %StartPath%
+
+REM Show log created in the Notepad
+%windir%\System32\notepad.exe %log% 
 
 goto :EOF
 
